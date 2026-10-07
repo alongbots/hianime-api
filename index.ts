@@ -1,7 +1,7 @@
 import app from './src/app';
 import config from './src/config/config';
 
-const PORT = config.port;
+const PORT = Number(process.env.PORT) || config.port || 80;
 
 Bun.serve({
   port: PORT,
