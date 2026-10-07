@@ -1,5 +1,3 @@
-import { load } from 'cheerio';
-
 export interface ScheduledAnime {
   title: string | null;
   alternativeTitle: string | null;
@@ -8,27 +6,24 @@ export interface ScheduledAnime {
   episode: number | null;
 }
 
-export const extractSchedule = (html: string): ScheduledAnime[] => {
-  const $ = load(html);
+export interface ZangetsuScheduleJson {
+  id?: string | number;
+  slug?: string;
+  title?: string;
+  name?: string;
+  alternativeTitle?: string;
+  episode?: number;
+  episodes?: { sub?: number; dub?: number; eps?: number };
+  time?: string;
+}
 
-  const response: ScheduledAnime[] = [];
-  $('a').each((i, element) => {
-    const obj: ScheduledAnime = {
-      title: null,
-      alternativeTitle: null,
-      id: null,
-      time: null,
-      episode: null,
-    };
-
-    const el = $(element);
-    obj.id = el.attr('href')?.replace('/', '') || null;
-    obj.time = el.find('.time').text() || null;
-    obj.title = el.find('.film-name').text().trim() || null;
-    obj.alternativeTitle = el.find('.film-name').attr('data-jname')?.trim() || null;
-    obj.episode = Number(el.find('.btn-play').text().trim().split('Episode ').pop()) || null;
-
-    response.push(obj);
-  });
-  return response;
+export const extractSchedule = (items: ZangetsuScheduleJson[]): ScheduledAnime[] => {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    title: item.title || item.name || null,
+    alternativeTitle: item.alternativeTitle || null,
+    id: item.slug || (item.id !== undefined ? String(item.id) : null),
+    time: item.time || null,
+    episode: typeof item.episode === 'number' ? item.episode : null,
+  }));
 };

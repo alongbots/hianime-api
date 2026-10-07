@@ -45,27 +45,30 @@ export const extractDetailpage = (html: string): DetailAnime => {
     '.block_area.block_area_category .tab-content .block_area-content .film_list-wrap .flw-item'
   );
 
-  obj.poster = main.find('.film-poster .film-poster-img').attr('src') || null;
+  obj.poster =
+    main.find('.film-poster .film-poster-img').attr('src') ||
+    main.find('.film-poster .film-poster-img').attr('data-src') ||
+    null;
   obj.is18Plus = Boolean(main.find('.film-poster .tick-rate').length > 0);
 
   const titleEl = main.find('.anisc-detail .film-name');
-  obj.title = titleEl.text();
+  obj.title = titleEl.text().trim() || null;
   obj.alternativeTitle = titleEl.attr('data-jname') || null;
 
   const info = main.find('.film-stats .tick');
 
-  obj.rating = info.find('.tick-pg').text();
+  obj.rating = info.find('.tick-pg').text().trim() || null;
   obj.episodes.sub = Number(info.find('.tick-sub').text()) || null;
   obj.episodes.dub = Number(info.find('.tick-dub').text()) || null;
   obj.episodes.eps = info.find('.tick-eps').length
     ? Number(info.find('.tick-eps').text()) || null
     : Number(info.find('.tick-sub').text()) || null;
 
-  obj.type = info.find('.item').first().text();
+  obj.type = info.find('.item').first().text().trim() || null;
 
   const idLink = main.find('.film-buttons .btn');
 
-  obj.id = idLink.length ? idLink.attr('href')?.split('/').at(-1) || null : null;
+  obj.id = idLink.length ? idLink.attr('href')?.split('?')[0].split('/').at(-1) || null : null;
 
   const moreInfo = main.find('.anisc-info-wrap .anisc-info .item');
 
@@ -74,20 +77,20 @@ export const extractDetailpage = (html: string): DetailAnime => {
 
     switch (name) {
       case 'Overview:':
-        obj.synopsis = $(el).find('.text').text().trim();
+        obj.synopsis = $(el).find('.text').text().trim() || null;
         break;
       case 'Japanese:':
-        obj.japanese = $(el).find('.name').text();
+        obj.japanese = $(el).find('.name').text().trim() || null;
         break;
       case 'Synonyms:':
-        obj.synonyms = $(el).find('.name').text();
+        obj.synonyms = $(el).find('.name').text().trim() || null;
         break;
       case 'Aired:': {
-        let aired = $(el).find('.name').text().split('to');
-        obj.aired.from = aired[0].trim();
+        const aired = $(el).find('.name').text().split('to');
+        obj.aired.from = aired[0].trim() || null;
         if (aired.length > 1) {
           const secondPart = aired[1].trim();
-          obj.aired.to = secondPart === '?' ? null : secondPart;
+          obj.aired.to = secondPart === '?' || !secondPart ? null : secondPart;
         } else {
           obj.aired.to = null;
         }
@@ -95,21 +98,21 @@ export const extractDetailpage = (html: string): DetailAnime => {
         break;
       }
       case 'Premiered:':
-        obj.premiered = $(el).find('.name').text();
+        obj.premiered = $(el).find('.name').text().trim() || null;
         break;
       case 'Duration:':
-        obj.duration = $(el).find('.name').text();
+        obj.duration = $(el).find('.name').text().trim() || null;
         break;
       case 'Status:':
-        obj.status = $(el).find('.name').text();
+        obj.status = $(el).find('.name').text().trim() || null;
         break;
       case 'MAL Score:':
-        obj.MAL_score = $(el).find('.name').text();
+        obj.MAL_score = $(el).find('.name').text().trim() || null;
         break;
       case 'Genres:':
         obj.genres = $(el)
           .find('a')
-          .map((i: number, genre: Element) => $(genre).text())
+          .map((i: number, genre: Element) => $(genre).text().trim())
           .get();
         break;
       case 'Studios:':
@@ -175,7 +178,7 @@ export const extractDetailpage = (html: string): DetailAnime => {
         };
 
         const titleEl = $(el).find('.film-name .dynamic-name');
-        innerObj.title = titleEl.text();
+        innerObj.title = titleEl.text().trim() || null;
         innerObj.alternativeTitle = titleEl.attr('data-jname') || null;
         innerObj.id = titleEl.attr('href')?.split('/').pop() || null;
 
@@ -227,13 +230,20 @@ export const extractDetailpage = (html: string): DetailAnime => {
       is18Plus: false,
     };
     const titleEl = $(el).find('.film-detail .film-name .dynamic-name');
-    innerObj.title = titleEl.text();
+    innerObj.title =
+      titleEl.attr('title') || titleEl.attr('data-title') || titleEl.text().trim() || null;
     innerObj.alternativeTitle = titleEl.attr('data-jname') || null;
-    innerObj.id = titleEl.attr('href')?.split('/').pop() || null;
-    innerObj.type = $(el).find('.fd-infor .fdi-item').first().text();
-    innerObj.duration = $(el).find('.fd-infor .fdi-duration').text();
+    innerObj.id = titleEl.attr('href')?.split('?')[0].split('/').pop() || null;
+    innerObj.type = $(el).find('.fd-infor .fdi-item').first().text().trim() || null;
+    innerObj.duration =
+      $(el).find('.fd-infor .fdi-duration').text().trim() ||
+      $(el).find('.fd-infor .fdi-item').eq(1).text().trim() ||
+      null;
 
-    innerObj.poster = $(el).find('.film-poster .film-poster-img').attr('data-src') || null;
+    innerObj.poster =
+      $(el).find('.film-poster .film-poster-img').attr('data-src') ||
+      $(el).find('.film-poster .film-poster-img').attr('src') ||
+      null;
     innerObj.is18Plus = $(el).find('.film-poster').has('.tick-rate').length > 0;
 
     innerObj.episodes.sub = Number($(el).find('.film-poster .tick .tick-sub').text()) || null;

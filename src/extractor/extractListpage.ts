@@ -21,6 +21,63 @@ export interface ListPageAnime extends AnimeFeatured {
   duration: string | null;
 }
 
+export interface ZangetsuFilterJson {
+  id?: string | number;
+  slug?: string;
+  titles?: { romaji?: string; english?: string; native?: string };
+  title?: string;
+  alternativeTitle?: string;
+  images?: { poster?: string };
+  poster?: string;
+  type?: string;
+  duration?: string;
+  duration_min?: number;
+  episodes_count?: number;
+  sub_count?: number;
+  dub_count?: number;
+}
+
+export interface FilterAjaxResponse {
+  success?: boolean;
+  data?: ZangetsuFilterJson[];
+  page?: number;
+  pages?: number;
+  total?: number;
+}
+
+export const extractFilterResults = (json: FilterAjaxResponse): ListPageResponse => {
+  const items = Array.isArray(json.data) ? json.data : [];
+  const page = typeof json.page === 'number' ? json.page : 1;
+  const pages = typeof json.pages === 'number' ? json.pages : 1;
+  return {
+    pageInfo: {
+      currentPage: page,
+      hasNextPage: page < pages,
+      totalPages: pages,
+    },
+    response: items.map(
+      (anime): ListPageAnime => ({
+        title: anime.titles?.english || anime.titles?.romaji || anime.title || null,
+        alternativeTitle:
+          anime.titles?.native || anime.titles?.romaji || anime.alternativeTitle || null,
+        id: anime.slug || (anime.id !== undefined ? String(anime.id) : null),
+        poster: anime.images?.poster || anime.poster || null,
+        episodes: {
+          sub: typeof anime.sub_count === 'number' ? anime.sub_count : null,
+          dub: typeof anime.dub_count === 'number' ? anime.dub_count : null,
+          eps: typeof anime.episodes_count === 'number' ? anime.episodes_count : null,
+        },
+        type: anime.type || null,
+        duration:
+          anime.duration ||
+          (typeof anime.duration_min === 'number' ? `${anime.duration_min}m` : null),
+      })
+    ),
+    top10: { today: [], week: [], month: [] },
+    genres: [],
+  };
+};
+
 export const extractListPage = (html: string): ListPageResponse => {
   const $ = load(html);
 
@@ -58,7 +115,10 @@ export const extractListPage = (html: string): ListPageResponse => {
         duration: null,
       };
 
-      obj.poster = $(el).find('.film-poster .film-poster-img').attr('data-src') || null;
+      obj.poster =
+        $(el).find('.film-poster .film-poster-img').attr('data-src') ||
+        $(el).find('.film-poster .film-poster-img').attr('src') ||
+        null;
       obj.episodes.sub = Number($(el).find('.film-poster .tick .tick-sub').text()) || null;
       obj.episodes.dub = Number($(el).find('.film-poster .tick .tick-dub').text()) || null;
 
@@ -69,14 +129,18 @@ export const extractListPage = (html: string): ListPageResponse => {
 
       const titleEl = $(el).find('.film-detail .film-name .dynamic-name');
 
-      obj.title = titleEl.text();
+      obj.title =
+        titleEl.attr('title') || titleEl.attr('data-title') || titleEl.text().trim() || null;
       obj.alternativeTitle = titleEl.attr('data-jname') || null;
       const href = titleEl.attr('href') || '';
-      const id = href.split('/').at(-1) || '';
+      const id = href.split('?')[0].split('/').at(-1) || '';
       obj.id = id.includes('?ref=') ? id.split('?')[0] : id;
 
-      obj.type = $(el).find('.fd-infor .fdi-item').first().text();
-      obj.duration = $(el).find('.fd-infor .fdi-duration').text();
+      obj.type = $(el).find('.fd-infor .fdi-item').first().text().trim() || null;
+      obj.duration =
+        $(el).find('.fd-infor .fdi-duration').text().trim() ||
+        $(el).find('.fd-infor .fdi-item').eq(1).text().trim() ||
+        null;
 
       response.push(obj);
     }
@@ -110,12 +174,16 @@ export const extractListPage = (html: string): ListPageResponse => {
     const res = $top10
       .find(`${id} ul li`)
       .map((i: number, el: Element) => {
+        const linkEl = $(el).find('.film-name a');
         const obj: TrendingAnime = {
-          title: $(el).find('.film-name a').text() || null,
+          title: linkEl.attr('title') || linkEl.text().trim() || null,
           rank: i + 1,
-          alternativeTitle: $(el).find('.film-name a').attr('data-jname') || null,
-          id: $(el).find('.film-name a').attr('href')?.split('/').pop() || null,
-          poster: $(el).find('.film-poster img').attr('data-src') || null,
+          alternativeTitle: linkEl.attr('data-jname') || null,
+          id: linkEl.attr('href')?.split('?')[0].split('/').pop() || null,
+          poster:
+            $(el).find('.film-poster img').attr('data-src') ||
+            $(el).find('.film-poster img').attr('src') ||
+            null,
         };
         return obj;
       })

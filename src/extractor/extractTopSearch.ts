@@ -12,7 +12,8 @@ export const extractTopSearch = (html: string): TopSearchAnime[] => {
 
   $('.xhashtag .item').each((i, el) => {
     const link = $(el).attr('href') || null;
-    const id = link ? link.split('/').pop()?.split('?')[0] || null : null;
+    const id =
+      link && !link.includes('/search?') ? link.split('/').pop()?.split('?')[0] || null : null;
 
     topSearch.push({
       title: $(el).text().trim() || null,

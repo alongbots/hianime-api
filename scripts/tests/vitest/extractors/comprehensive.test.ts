@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { extractHomepage } from '../../../../src/extractor/extractHomepage';
 import { extractDetailpage } from '../../../../src/extractor/extractDetailpage';
 import { extractListPage } from '../../../../src/extractor/extractListpage';
-import { extractCharacters } from '../../../../src/extractor/extractCharacters';
 import { extractNews } from '../../../../src/extractor/extractNews';
 import { extractSchedule } from '../../../../src/extractor/extractSchedule';
 import { extractEpisodes } from '../../../../src/extractor/extractEpisodes';
@@ -10,6 +9,8 @@ import { extractCharacterDetail } from '../../../../src/extractor/extractCharact
 import { extractSuggestions } from '../../../../src/extractor/extractSuggestions';
 import { extractTopSearch } from '../../../../src/extractor/extractTopSearch';
 import { extractNextEpisodeSchedule } from '../../../../src/extractor/extractNextEpisodeSchedule';
+import { extractCdnCharacters } from '../../../../src/extractor/extractCharacters';
+import { extractServers } from '../../../../src/extractor/extractServers';
 import { mockHtmlData } from '../../data/mocks';
 
 describe('Extractors Comprehensive Suite', () => {
@@ -18,6 +19,12 @@ describe('Extractors Comprehensive Suite', () => {
       const result = extractHomepage(mockHtmlData.homepage);
       expect(result.spotlight).toHaveLength(1);
       expect(result.spotlight[0].title).toBe('Spotlight Anime');
+    });
+    it('should extract trending items', () => {
+      const result = extractHomepage(mockHtmlData.homepage);
+      expect(result.trending).toHaveLength(1);
+      expect(result.trending[0].title).toBe('Trending Anime');
+      expect(result.trending[0].id).toBe('trending-456');
     });
   });
 
@@ -37,14 +44,6 @@ describe('Extractors Comprehensive Suite', () => {
     });
   });
 
-  describe('extractCharacters', () => {
-    it('should extract characters', () => {
-      const result = extractCharacters(mockHtmlData.characters);
-      expect(result.response).toHaveLength(1);
-      expect(result.response[0].name).toBe('Character Name');
-    });
-  });
-
   describe('extractNews', () => {
     it('should extract news items', () => {
       const result = extractNews(mockHtmlData.news);
@@ -55,17 +54,19 @@ describe('Extractors Comprehensive Suite', () => {
 
   describe('extractSchedule', () => {
     it('should extract schedule', () => {
-      const result = extractSchedule(mockHtmlData.schedule);
+      const result = extractSchedule(mockHtmlData.schedule['2026-10-06']);
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Scheduled Anime');
+      expect(result[0].episode).toBe(5);
     });
   });
 
   describe('extractEpisodes', () => {
     it('should extract episodes', () => {
-      const result = extractEpisodes(mockHtmlData.episodes);
+      const result = extractEpisodes(mockHtmlData.episodes.episodes);
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Episode 1');
+      expect(result[0].id).toBe('1');
     });
   });
 
@@ -95,7 +96,26 @@ describe('Extractors Comprehensive Suite', () => {
   describe('extractNextEpisodeSchedule', () => {
     it('should extract next episode schedule', () => {
       const result = extractNextEpisodeSchedule(mockHtmlData.scheduleNext);
-      expect(result).toBe('10:00');
+      expect(result?.episode).toBe(1181);
+      expect(result?.airingAt).toBe('2027-01-03T14:16:00.000Z');
+    });
+  });
+
+  describe('extractCdnCharacters', () => {
+    it('should map cdn characters json', () => {
+      const result = extractCdnCharacters(mockHtmlData.charactersJson);
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Character Name');
+      expect(result[0].id).toBe('character:1480');
+      expect(result[0].voiceActors[0].id).toBe('people:7111');
+    });
+  });
+
+  describe('extractServers', () => {
+    it('should build iframe embeds', () => {
+      const result = extractServers(mockHtmlData.serversJson, '1', 'sub', '21/1', '21/1');
+      expect(result.servers).toHaveLength(2);
+      expect(result.servers[1].iframe).toContain('/embed/hd-1/1/sub');
     });
   });
 });

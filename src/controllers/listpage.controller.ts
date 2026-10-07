@@ -41,7 +41,6 @@ const listpageController = async (c: Context): Promise<ListPageResponse> => {
   }
 
   let nromalizeCategory = category && category.replaceAll(' ', '-').toLowerCase();
-  if (nromalizeCategory === 'martial-arts') nromalizeCategory = 'marial-arts';
   const endpoint = category
     ? `/${query}/${nromalizeCategory}?page=${page}`
     : `/${query}?page=${page}`;

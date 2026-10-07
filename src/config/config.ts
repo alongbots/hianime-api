@@ -1,6 +1,8 @@
 const config = {
-  baseurl: 'https://aniwatchtv.to',
-  baseurl2: 'https://aniwatchtv.to',
+  baseurl: 'https://zangetsu.cc',
+  cdnApi: 'https://cdnanimo.xyz',
+  embedCdn: 'https://cdn.4animo.xyz',
+  flixera: 'https://flixera.co',
   origin: '*',
   port: 5000,
 

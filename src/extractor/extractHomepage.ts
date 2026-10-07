@@ -24,9 +24,8 @@ export const extractHomepage = (html: string): HomePage => {
   };
 
   const $spotlight = $('.deslide-wrap .swiper-wrapper .swiper-slide');
-  const $trending = $('#trending-home .swiper-container .swiper-slide');
-  const $featured = $('#anime-featured .anif-blocks .row .anif-block');
-  const $home = $('.block_area.block_area_home');
+  const $featured = $('.anif-blocks .row .anif-block');
+  const $home = $('section.block_area');
   const $top10 = $('.block_area .cbox');
   const $genres = $('.sb-genre-list');
 
@@ -48,11 +47,19 @@ export const extractHomepage = (html: string): HomePage => {
         eps: null,
       },
     };
-    obj.id = $(el).find('.desi-buttons a').first().attr('href')?.split('/').at(-1) || null;
-    obj.poster = $(el).find('.deslide-cover .film-poster-img').attr('data-src') || null;
+    const hrefs = $(el)
+      .find('.desi-buttons a')
+      .toArray()
+      .map(a => $(a).attr('href') || '');
+    const detailHref = hrefs.find(h => h && !h.startsWith('/watch')) || hrefs[0] || '';
+    obj.id = detailHref.split('?')[0].split('/').at(-1) || null;
+    obj.poster =
+      $(el).find('.deslide-cover .film-poster-img').attr('data-src') ||
+      $(el).find('.deslide-cover-img img').attr('src') ||
+      null;
 
     const titles = $(el).find('.desi-head-title');
-    obj.title = titles.text();
+    obj.title = titles.text().trim() || null;
     obj.alternativeTitle = titles.attr('data-jname') || null;
 
     obj.synopsis = $(el).find('.desi-description').text().trim();
@@ -73,27 +80,21 @@ export const extractHomepage = (html: string): HomePage => {
 
     response.spotlight.push(obj);
   });
-  $($trending).each((i: number, el: Element) => {
-    const obj: TrendingAnime = {
-      title: null,
-      alternativeTitle: null,
+  $('#tl-trending .swiper-wrapper .swiper-slide').each((i: number, el: Element) => {
+    const card = $(el).find('.tl-card');
+    const titleEl = card.find('.tl-rank-title');
+    const linkEl = card.find('a.tl-poster-link');
+    response.trending.push({
+      title: titleEl.attr('data-title') || titleEl.text().trim() || null,
+      alternativeTitle: titleEl.attr('data-jname') || null,
       rank: i + 1,
-      poster: null,
-      id: null,
-    };
-
-    const titleEl = $(el).find('.item .film-title');
-    obj.title = titleEl.text();
-    obj.alternativeTitle = titleEl.attr('data-jname') || null;
-
-    const imageEl = $(el).find('.film-poster');
-
-    obj.poster = imageEl.find('img').attr('data-src') || null;
-    obj.id = imageEl.attr('href')?.split('/').at(-1) || null;
-
-    response.trending.push(obj);
+      poster:
+        card.find('img.tl-poster-img').attr('data-src') ||
+        card.find('img.tl-poster-img').attr('src') ||
+        null,
+      id: card.attr('data-id') || linkEl.attr('href')?.split('?')[0].split('/').at(-1) || null,
+    });
   });
-
   $($featured).each((i: number, el: Element) => {
     const data = $(el)
       .find('.anif-block-ul ul li')
@@ -112,11 +113,15 @@ export const extractHomepage = (html: string): HomePage => {
           },
         };
         const titleEl = $(item).find('.film-detail .film-name a');
-        obj.title = titleEl.attr('title') || null;
+        obj.title =
+          titleEl.attr('title') || titleEl.attr('data-title') || titleEl.text().trim() || null;
         obj.alternativeTitle = titleEl.attr('data-jname') || null;
-        obj.id = titleEl.attr('href')?.split('/').at(-1) || null;
+        obj.id = titleEl.attr('href')?.split('?')[0].split('/').at(-1) || null;
 
-        obj.poster = $(item).find('.film-poster .film-poster-img').attr('data-src') || null;
+        obj.poster =
+          $(item).find('.film-poster .film-poster-img').attr('data-src') ||
+          $(item).find('.film-poster .film-poster-img').attr('src') ||
+          null;
 
         // Extract type (first fdi-item) and duration (second fdi-item if exists)
         const infoItems = $(item).find('.fd-infor .fdi-item');
@@ -160,11 +165,15 @@ export const extractHomepage = (html: string): HomePage => {
           },
         };
         const titleEl = $(item).find('.film-detail .film-name .dynamic-name');
-        obj.title = titleEl.attr('title') || null;
+        obj.title =
+          titleEl.attr('title') || titleEl.attr('data-title') || titleEl.text().trim() || null;
         obj.alternativeTitle = titleEl.attr('data-jname') || null;
-        obj.id = titleEl.attr('href')?.split('/').at(-1) || null;
+        obj.id = titleEl.attr('href')?.split('?')[0].split('/').at(-1) || null;
 
-        obj.poster = $(item).find('.film-poster img').attr('data-src') || null;
+        obj.poster =
+          $(item).find('.film-poster img').attr('data-src') ||
+          $(item).find('.film-poster img').attr('src') ||
+          null;
 
         const episodesEl = $(item).find('.film-poster .tick');
         obj.episodes.sub = Number($(episodesEl).find('.tick-sub').text()) || null;
@@ -180,13 +189,14 @@ export const extractHomepage = (html: string): HomePage => {
       })
       .get();
 
-    const dataType = $(el).find('.cat-heading').text().replace(/\s+/g, '');
+    const dataType = $(el).find('.cat-heading').first().text().replace(/\s+/g, '');
     const normalizedDataType = (dataType.charAt(0).toLowerCase() +
       dataType.slice(1)) as keyof HomePage;
 
-    if ((normalizedDataType as string) === 'newOnHiAnime') {
-      response.newAdded = data;
-    } else if (normalizedDataType in response) {
+    if (data.length < 1) return;
+    if (normalizedDataType in response) {
+      const current = response[normalizedDataType] as unknown;
+      if (Array.isArray(current) && current.length > 0) return;
       (response[normalizedDataType] as AnimeFeatured[]) = data as AnimeFeatured[];
     }
   });
@@ -195,12 +205,16 @@ export const extractHomepage = (html: string): HomePage => {
     const res = $top10
       .find(`${id} ul li`)
       .map((i: number, el: Element) => {
+        const linkEl = $(el).find('.film-name a');
         const obj: TrendingAnime = {
-          title: $(el).find('.film-name a').text() || null,
+          title: linkEl.attr('title') || linkEl.text().trim() || null,
           rank: i + 1,
-          alternativeTitle: $(el).find('.film-name a').attr('data-jname') || null,
-          id: $(el).find('.film-name a').attr('href')?.split('/').pop() || null,
-          poster: $(el).find('.film-poster img').attr('data-src') || null,
+          alternativeTitle: linkEl.attr('data-jname') || null,
+          id: linkEl.attr('href')?.split('?')[0].split('/').pop() || null,
+          poster:
+            $(el).find('.film-poster img').attr('data-src') ||
+            $(el).find('.film-poster img').attr('src') ||
+            null,
         };
         return obj;
       })
