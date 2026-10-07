@@ -63,8 +63,8 @@ export const extractCharacterDetail = (html: string): CharacterDetail => {
 
   obj.imageUrl = $('.actor-page-wrap .avatar img').attr('src') || null;
   const allDetails = $('.apw-detail');
-  obj.name = allDetails.find('.name').text();
-  obj.japanese = allDetails.find('.sub-name').text();
+  obj.name = allDetails.find('.name').text().trim() || null;
+  obj.japanese = allDetails.find('.sub-name').text().trim() || null;
 
   obj.bio = allDetails.find('.tab-content #bio .bio').html()?.trim() || null;
 
@@ -86,8 +86,9 @@ export const extractCharacterDetail = (html: string): CharacterDetail => {
       innerObj.id = transformId(titleEl.attr('href'));
 
       innerObj.poster = $(el).find('.film-poster .film-poster-img').attr('src') || null;
-      innerObj.role = $(el).find('.fd-infor .fdi-item').first().text().split(' ').shift() || null;
-      innerObj.type = $(el).find('.fd-infor .fdi-item').last().text();
+      innerObj.role =
+        $(el).find('.fd-infor .fdi-item').first().text().trim().split(' ').shift() || null;
+      innerObj.type = $(el).find('.fd-infor .fdi-item').last().text().trim() || null;
 
       obj.animeAppearances?.push(innerObj);
     });
@@ -101,10 +102,10 @@ export const extractCharacterDetail = (html: string): CharacterDetail => {
         language: null,
       };
       innerObj.imageUrl = $(el).find('.pi-avatar img').attr('src') || null;
-      innerObj.name = $(el).find('.pi-name a').text();
+      innerObj.name = $(el).find('.pi-name a').text().trim() || null;
       innerObj.id = transformId($(el).find('.pi-name a').attr('href'));
 
-      innerObj.language = $(el).find('.pi-cast').text();
+      innerObj.language = $(el).find('.pi-cast').text().trim() || null;
 
       obj.voiceActors?.push(innerObj);
     });

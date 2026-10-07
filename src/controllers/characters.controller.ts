@@ -1,30 +1,45 @@
 import { Context } from 'hono';
 import config from '../config/config';
 import { validationError } from '../utils/errors';
-import { extractCharacters, CharactersResponse } from '../extractor/extractCharacters';
-import { axiosInstance } from '../services/axiosInstance';
+import {
+  Character,
+  CharactersResponse,
+  CdnCharactersResponse,
+  extractCdnCharacters,
+} from '../extractor/extractCharacters';
+import { animeNumId } from '../services/zangetsu';
+
+const PAGE_SIZE = 12;
 
 const charactersController = async (c: Context): Promise<CharactersResponse> => {
   try {
     const id = c.req.param('id');
-    const page = c.req.query('page') || '1';
+    const page = Number(c.req.query('page') || '1') || 1;
 
     if (!id) throw new validationError('id is required');
 
-    const idNum = id.split('-').pop();
-    const endpoint = `/ajax/character/list/${idNum}?page=${page}`;
+    const res = await fetch(
+      `${config.cdnApi}/anime/${encodeURIComponent(animeNumId(id))}/characters`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = (await res.json()) as CdnCharactersResponse;
 
-    const result = await axiosInstance(endpoint, {
-      headers: { Referer: `${config.baseurl}/home` },
-    });
+    const all = extractCdnCharacters(json);
+    if (all.length < 1) throw new validationError('characters not found');
 
-    if (!result.success || !result.data) {
-      throw new validationError(result.message || 'characters not found');
-    }
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    const currentPage = Math.min(Math.max(page, 1), totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const response: Character[] = all.slice(start, start + PAGE_SIZE);
 
-    const response = extractCharacters(result.data);
-
-    return response;
+    return {
+      pageInfo: {
+        totalPages,
+        currentPage,
+        hasNextPage: currentPage < totalPages,
+      },
+      response,
+    };
   } catch (err: unknown) {
     if (err instanceof Error) {
       console.log(err.message);

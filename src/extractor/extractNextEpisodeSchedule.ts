@@ -1,18 +1,23 @@
-import { load } from 'cheerio';
+export interface NextEpisodeScheduleJson {
+  success?: boolean;
+  episode?: number;
+  airing_at_iso?: string;
+  timeUntilAiring?: number;
+}
 
-export const extractNextEpisodeSchedule = (html: string): string | null => {
-  const $ = load(html);
+export interface NextEpisodeSchedule {
+  episode: number | null;
+  airingAt: string | null;
+  timeUntilAiring: number | null;
+}
 
-  // Try to get schedule from data-value attribute
-  const scheduleElement = $('#schedule-date');
-  const scheduleDate = scheduleElement.attr('data-value');
-
-  if (scheduleDate) {
-    return scheduleDate;
-  }
-
-  // Fallback: try to get from text content
-  const rawString = $('.tick-item.tick-eps.schedule').text().trim();
-
-  return rawString || null;
+export const extractNextEpisodeSchedule = (
+  json: NextEpisodeScheduleJson
+): NextEpisodeSchedule | null => {
+  if (!json || typeof json.episode !== 'number') return null;
+  return {
+    episode: json.episode,
+    airingAt: json.airing_at_iso || null,
+    timeUntilAiring: typeof json.timeUntilAiring === 'number' ? json.timeUntilAiring : null,
+  };
 };

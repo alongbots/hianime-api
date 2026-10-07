@@ -22,20 +22,23 @@ export const mockHtmlData = {
         </div>
       </div>
     </div>
-    <div id="trending-home">
-      <div class="swiper-container">
+    <div id="tl-trending">
+      <div class="swiper-wrapper">
         <div class="swiper-slide">
-          <div class="item">
-            <div class="film-title">Trending Anime</div>
-            <a href="/watch/trending-456" class="film-poster">
-              <img data-src="https://example.com/trending.jpg">
+          <div class="tl-card" data-id="trending-456">
+            <div class="tl-rank-bar">
+              <span class="tl-rank-num">01</span>
+              <div class="tl-rank-title dynamic-name" data-title="Trending Anime" data-jname="Trending Alt">Trending Anime</div>
+            </div>
+            <a href="/trending-456" class="tl-poster-link" title="Trending Anime">
+              <img data-src="https://example.com/trending.jpg" class="tl-poster-img">
             </a>
           </div>
         </div>
       </div>
     </div>
-    <div id="anime-featured">
-      <div class="anif-blocks">
+    <div class="anif-blocks">
+      <div class="row">
         <div class="anif-block">
           <div class="anif-block-header">Most Popular</div>
           <div class="anif-block-ul">
@@ -112,25 +115,6 @@ export const mockHtmlData = {
       </div>
     </div>
   `,
-  characters: `
-    <div class="block_area-content block_area-list film_list">
-      <div class="film_list-wrap">
-        <div class="bac-item">
-          <div class="per-info">
-            <div class="pi-avatar">
-              <a href="/character/char-123">
-                <img data-src="https://example.com/character.jpg">
-              </a>
-            </div>
-            <div class="pi-detail">
-              <div class="pi-name"><a href="/character/char-123">Character Name</a></div>
-              <div class="pi-cast">Main</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
   news: `
     <div class="zr-news-list">
       <div class="item">
@@ -142,24 +126,38 @@ export const mockHtmlData = {
       </div>
     </div>
   `,
-  schedule: `
-    <div class="block_area-content block_area-list film_list">
-      <a href="/watch/anime-123">
-        <div class="time">10:00</div>
-        <div class="film-name" data-jname="Schedule Alt">Scheduled Anime</div>
-        <div class="btn-play">Episode 5</div>
-      </a>
-    </div>
-  `,
-  episodes: `
-    <div class="block_area-content block_area-list film_list">
-      <div class="detail-channels">
-        <a class="ssl-item ep-item" href="/watch/ep-1" title="Episode 1">
-          <div class="ep-name e-dynamic-name" data-jname="Ep 1 Alt"></div>
-        </a>
-      </div>
-    </div>
-  `,
+  schedule: {
+    '2026-10-06': [
+      {
+        id: 16593,
+        slug: 'scheduled-anime-16593',
+        title: 'Scheduled Anime',
+        name: 'Scheduled Anime',
+        alternativeTitle: 'Scheduled Alt',
+        episode: 5,
+        episodes: { sub: 0, dub: 0, eps: 4 },
+        time: '10:00',
+      },
+    ],
+  },
+  episodes: {
+    success: true,
+    episodes: [
+      {
+        id: '1',
+        number: 1,
+        titles: { en: 'Episode 1', romaji: 'Ep 1 Alt', ja: 'Ep 1 JA' },
+        title: null,
+        alternativeTitle: null,
+        sub: true,
+        dub: false,
+        embed_id: '2142',
+        ani: '21/1',
+        mal: '21/1',
+        filler: false,
+      },
+    ],
+  },
   characterDetail: `
     <div class="actor-page-wrap">
       <div class="avatar">
@@ -176,29 +174,51 @@ export const mockHtmlData = {
       </div>
     </div>
   `,
-  suggestions: `
-    <div class="nav-item">
-      <a href="/watch/suggest-1">
-        <img class="film-poster-img" data-src="https://example.com/s1.jpg">
-        <div class="film-name">S1</div>
-        <div class="film-infor"><span>A1</span><span>D1</span></div>
-      </a>
-    </div>
-    <div class="nav-item">
-      <a href="/watch/suggest-2">
-        <img class="film-poster-img" data-src="https://example.com/s2.jpg">
-        <div class="film-name">S2</div>
-        <div class="film-infor"><span>A2</span><span>D2</span></div>
-      </a>
-    </div>
-    <div class="nav-item">
-      <a href="/watch/suggest-3">
-        <img class="film-poster-img" data-src="https://example.com/s3.jpg">
-        <div class="film-name">Suggest Title</div>
-        <div class="film-infor"><span>A3</span><span>D3</span></div>
-      </a>
-    </div>
-  `,
+  suggestions: {
+    success: true,
+    response: [
+      {
+        id: 12,
+        slug: 'suggest-1',
+        title: 'S1',
+        alternativeTitle: 'S1 Alt',
+        poster: 'https://example.com/s1.jpg',
+        images: { poster: 'https://example.com/s1.jpg' },
+        year: 1999,
+        type: 'TV',
+        duration: '24m',
+      },
+    ],
+  },
+  charactersJson: {
+    anime_id: 12,
+    total: 1,
+    data: [
+      {
+        id: 1480,
+        slug: '1480-character-name',
+        name: { full: 'Character Name', native: 'キャラ' },
+        image: 'https://example.com/character.jpg',
+        role: 'MAIN',
+        voice_actors: [
+          {
+            id: 7111,
+            slug: '7111-va-name',
+            name: { full: 'VA Name' },
+            image: 'https://example.com/va.jpg',
+            language: 'Japanese',
+          },
+        ],
+      },
+    ],
+  },
+  serversJson: {
+    sub: [
+      { serverId: '1-s1', serverName: 's-1', index: 3 },
+      { serverId: '1-s2', serverName: 's-2', index: 2 },
+    ],
+    dub: [],
+  },
   topSearch: `
     <div class="xhashtag">
       <a class="item" href="/watch/top-1">T1</a>
@@ -206,9 +226,10 @@ export const mockHtmlData = {
       <a class="item" href="/watch/top-123">Top Title</a>
     </div>
   `,
-  scheduleNext: `
-    <div class="block_area-content">
-      <div id="schedule-date" data-value="10:00"></div>
-    </div>
-  `,
+  scheduleNext: {
+    success: true,
+    episode: 1181,
+    airing_at_iso: '2027-01-03T14:16:00.000Z',
+    timeUntilAiring: 7707558,
+  },
 };

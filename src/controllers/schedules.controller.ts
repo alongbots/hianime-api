@@ -1,14 +1,14 @@
 import { Context } from 'hono';
-import config from '../config/config';
 import { validationError } from '../utils/errors';
-import { extractSchedule, ScheduledAnime } from '../extractor/extractSchedule';
+import {
+  extractSchedule,
+  ScheduledAnime,
+  ZangetsuScheduleJson,
+} from '../extractor/extractSchedule';
 import { axiosInstance } from '../services/axiosInstance';
 
 export interface ScheduleResponse {
-  success: boolean;
-  data: {
-    [date: string]: ScheduledAnime[];
-  };
+  [date: string]: ScheduledAnime[];
 }
 
 async function schedulesController(c: Context): Promise<ScheduleResponse> {
@@ -36,20 +36,19 @@ async function schedulesController(c: Context): Promise<ScheduleResponse> {
 
   try {
     const promises = dates.map(async date => {
-      const ajaxUrl = `/ajax/schedule/list?tzOffset=-330&date=${date}`;
       try {
-        const result = await axiosInstance(ajaxUrl, {
-          headers: { Referer: `${config.baseurl}/home` },
-        });
+        const result = await axiosInstance(`/ajax/schedules?date=${date}`);
 
         if (!result.success || !result.data) {
           throw new Error(result.message || 'Failed to fetch');
         }
 
-        const jsonData = JSON.parse(result.data);
+        const jsonData = JSON.parse(result.data) as Record<string, unknown>;
+        const byData = jsonData.data as Record<string, unknown> | undefined;
+        const items = (jsonData[date] || byData?.[date] || []) as ZangetsuScheduleJson[];
         return {
           date,
-          shows: extractSchedule(jsonData.html),
+          shows: extractSchedule(items),
         };
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -64,16 +63,12 @@ async function schedulesController(c: Context): Promise<ScheduleResponse> {
 
     const results = await Promise.all(promises);
 
-    // Format response to map dates to shows
-    const response: { [date: string]: ScheduledAnime[] } = {};
+    const response: ScheduleResponse = {};
     results.forEach(result => {
       response[result.date] = result.shows;
     });
 
-    return {
-      success: true,
-      data: response,
-    };
+    return response;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(errorMessage);

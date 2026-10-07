@@ -7,7 +7,7 @@
 ![Bun](https://img.shields.io/badge/bun-%23000000.svg?style=flat&logo=bun&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)
 
-**A RESTful API that utilizes web scraping to fetch anime content from hianime.to**
+**A RESTful API that utilizes web scraping to fetch anime content from zangetsu.cc**
 
 [Documentation](#documentation) • [Installation](#installation) • [API Endpoints](#api-endpoints) • [Development](#development)
 
@@ -39,6 +39,8 @@
   - [Anime Characters](#10-get-anime-characters)
   - [Character Details](#11-get-character-details)
   - [Anime Episodes](#12-get-anime-episodes)
+  - [Episode Servers](#13-get-episode-servers)
+  - [Top Search](#14-get-top-search)
   - [Anime Schedules](#17-get-anime-schedules-7-days)
   - [All Genres](#18-get-all-genres)
   - [Top Airing](#19-get-top-airing)
@@ -70,7 +72,7 @@
 
 ## Overview
 
-hianime-api is a comprehensive RESTful API that provides endpoints to retrieve anime details, episodes, and streaming links by scraping content from hianime.to. Built with modern web technologies, it offers a robust solution for anime content aggregation.
+hianime-api is a comprehensive RESTful API that provides endpoints to retrieve anime details, episodes, and streaming links by scraping content from zangetsu.cc. Built with modern web technologies, it offers a robust solution for anime content aggregation.
 
 ## Important Notice
 
@@ -78,7 +80,7 @@ hianime-api is a comprehensive RESTful API that provides endpoints to retrieve a
 
 1. This API is recommended for **personal use only**. Deploy your own instance and customize it as needed.
 
-2. This API is just an **unofficial API for [hianime.to](https://hianime.to)** and is in no other way officially related to the same.
+2. This API is just an **unofficial API for [zangetsu.cc](https://zangetsu.cc)** and is in no other way officially related to the same.
 
 3. The content that this API provides is not mine, nor is it hosted by me. These belong to their respective owners. This API just demonstrates how to build an API that scrapes websites and uses their content.
 
@@ -86,7 +88,15 @@ hianime-api is a comprehensive RESTful API that provides endpoints to retrieve a
 
 ## Video Integration
 
-For video playback, it is recommended to use the following external player. You can embed it using an `iframe` with the dynamic parameters retrieved from this API.
+The `GET /api/v2/servers/:episodeId` endpoint returns ready-to-embed player `iframe` URLs for every available server, so you can drop them straight into an `<iframe>` — no URL building needed on your side. Get the `:episodeId` from `GET /api/v2/episodes/:id`.
+
+```javascript
+const eps = await fetch('/api/v2/episodes/one-piece-12').then(r => r.json());
+const servers = await fetch(`/api/v2/servers/${eps.data[0].id}?type=sub`).then(r => r.json());
+console.log(servers.data.servers[0].iframe);
+```
+
+For manual embedding, the players follow this format (same as the site builds itself):
 
 **Embed Example URL:** `https://cdn.4animo.xyz/api/embed/hd-1/13825/sub?k=1&autoPlay=1&skipIntro=1&skipOutro=1`
 
@@ -294,7 +304,7 @@ GET /api/v2/schedule/next/:id
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/schedule/next/one-piece-100');
+const resp = await fetch('/api/v2/schedule/next/one-piece-12');
 const data = await resp.json();
 console.log(data);
 ```
@@ -308,10 +318,9 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "nextEpisode": {
-      "episodeNumber": 1120,
-      "releaseDate": "2024-12-15"
-    }
+    "episode": 1181,
+    "airingAt": "2027-01-03T14:16:00.000Z",
+    "timeUntilAiring": 7703469
   }
 }
 ```
@@ -340,7 +349,7 @@ GET /api/v2/animes/:query/:category?page=:page
 | `recently-added` | No | - |
 | `recently-updated` | No | - |
 | `top-upcoming` | No | - |
-| `genre` | Yes | action, adventure, cars, comedy, dementia, demons, drama, ecchi, fantasy, game, harem, historical, horror, isekai, josei, kids, magic, martial arts, mecha, military, music, mystery, parody, police, psychological, romance, samurai, school, sci-fi, seinen, shoujo, shoujo ai, shounen, shounen ai, slice of life, space, sports, super power, supernatural, thriller, vampire |
+| `genre` | Yes | action, adventure, cars, comedy, dementia, demons, drama, ecchi, fantasy, game, harem, historical, horror, isekai, josei, kids, magic, martial arts, mecha, military, music, mystery, parody, police, psychological, romance, samurai, school, sci-fi, seinen, shoujo, shoujo ai, shounen, shounen ai, slice of life, space, sports, super power, supernatural, thriller, vampire, yaoi, yuri |
 | `producer` | Yes | Any producer slug (e.g., bones, toei-animation, mappa) |
 | `az-list` | Yes | 0-9, all, a-z |
 | `subbed-anime` | No | - |
@@ -374,16 +383,16 @@ console.log(data);
       "currentPage": 1,
       "hasNextPage": true
     },
-    "animes": [
+    "response": [
       {
-        "title": "Attack on Titan",
-        "alternativeTitle": "Shingeki no Kyojin",
-        "id": "attack-on-titan-112",
-        "poster": "https://cdn.noitatnemucod.net/thumbnail/300x400/100/...",
+        "title": "Re:ZERO -Starting Life in Another World- Season 4",
+        "alternativeTitle": "Re:ゼロから始める異世界生活 4th season",
+        "id": "re-zero-starting-life-in-another-world-season-4-19509",
+        "poster": "https://cdnanimo.xyz/poster/19509.jpg",
         "episodes": {
-          "sub": 25,
-          "dub": 25,
-          "eps": 25
+          "sub": 19,
+          "dub": 17,
+          "eps": 19
         },
         "type": "TV",
         "duration": "24m"
@@ -409,7 +418,7 @@ GET /api/v2/anime/:id
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/anime/attack-on-titan-112');
+const resp = await fetch('/api/v2/anime/one-piece-12');
 const data = await resp.json();
 console.log(data);
 ```
@@ -423,34 +432,34 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "title": "Attack on Titan",
-    "alternativeTitle": "Shingeki no Kyojin",
-    "japanese": "進撃の巨人",
-    "id": "attack-on-titan-112",
-    "poster": "https://cdn.noitatnemucod.net/thumbnail/300x400/100/...",
-    "rating": "R",
+    "title": "One Piece",
+    "alternativeTitle": "ONE PIECE",
+    "japanese": "ONE PIECE",
+    "id": "one-piece-12",
+    "poster": "https://cdnanimo.xyz/poster/12.jpg",
+    "rating": "PG-13",
     "type": "TV",
     "episodes": {
-      "sub": 25,
-      "dub": 25,
-      "eps": 25
+      "sub": 1180,
+      "dub": 1155,
+      "eps": 1180
     },
-    "synopsis": "...",
-    "synonyms": "AoT",
+    "synopsis": "Gold Roger was known as the Pirate King ...",
+    "synonyms": "ワンピース, OP, ...",
     "aired": {
-      "from": "Apr 7, 2013",
-      "to": "Sep 29, 2013"
+      "from": "Oct 20, 1999",
+      "to": null
     },
-    "premiered": "Spring 2013",
+    "premiered": "FALL 1999",
     "duration": "24m",
-    "status": "Finished Airing",
-    "MAL_score": "8.52",
-    "genres": [...],
-    "studios": ["wit-studio"],
+    "status": "RELEASING",
+    "MAL_score": "8.73",
+    "genres": ["Action", "Adventure", "Drama", "Comedy", "Fantasy"],
+    "studios": ["toei-animation", "fuji-tv", "tap"],
     "producers": [...],
-    "moreSeasons": [...],
-    "related": [...],
-    "mostPopular": [...],
+    "moreSeasons": [],
+    "related": [],
+    "mostPopular": [],
     "recommended": [...]
   }
 }
@@ -487,22 +496,22 @@ console.log(data);
   "success": true,
   "data": {
     "pageInfo": {
-      "totalPages": 5,
+      "totalPages": 3,
       "currentPage": 1,
       "hasNextPage": true
     },
-    "animes": [
+    "response": [
       {
-        "title": "One Piece",
-        "alternativeTitle": "One Piece",
-        "id": "one-piece-100",
-        "poster": "https://cdn.noitatnemucod.net/thumbnail/300x400/100/...",
+        "title": "One Piece Fan Letter",
+        "alternativeTitle": "ONE PIECE FAN LETTER",
+        "id": "one-piece-fan-letter-18914",
+        "poster": "https://cdnanimo.xyz/poster/18914.jpg",
         "episodes": {
-          "sub": 1100,
-          "dub": 1050,
-          "eps": 1100
+          "sub": 1,
+          "dub": null,
+          "eps": 1
         },
-        "type": "TV",
+        "type": "SPECIAL",
         "duration": "24m"
       }
     ]
@@ -541,11 +550,11 @@ console.log(data);
   "success": true,
   "data": [
     {
-      "title": "Naruto",
-      "alternativeTitle": "Naruto",
-      "poster": "https://cdn.noitatnemucod.net/thumbnail/300x400/100/...",
-      "id": "naruto-677",
-      "aired": "Oct 3, 2002",
+      "title": "Naruto Shippuden",
+      "alternativeTitle": "Naruto: Shippuuden",
+      "poster": "https://cdnanimo.xyz/poster/1493.jpg",
+      "id": "naruto-shippuden-1493",
+      "aired": "2007",
       "type": "TV",
       "duration": "23m"
     }
@@ -602,7 +611,7 @@ console.log(data);
       "currentPage": 1,
       "hasNextPage": true
     },
-    "animes": [...]
+    "response": [...]
   }
 }
 ```
@@ -637,14 +646,14 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "types": [...],
-    "statuses": [...],
-    "ratings": [...],
-    "scores": [...],
-    "seasons": [...],
-    "languages": [...],
-    "sorts": [...],
-    "genres": [...]
+    "type": ["all", "movie", "tv", "ova", "ona", "special", "music"],
+    "status": ["all", "finished_airing", "currently_airing", "not_yet_aired"],
+    "rated": ["all", "g", "pg", "pg-13", "r", "r+", "rx"],
+    "score": ["all", "appalling", "horrible", "very_bad", "bad", "average", "fine", "good", "very_good", "great", "masterpiece"],
+    "season": ["all", "spring", "summer", "fall", "winter"],
+    "language": ["all", "sub", "dub", "sub_dub"],
+    "sort": ["default", "recently-added", "recently-updated", "score", "name-az", "released-date", "most-watched"],
+    "genres": ["action", "adventure", "cars", "comedy", "dementia", "demons", "drama", "ecchi", "fantasy", "game", "harem", "historical", "horror", "isekai", "josei", "kids", "magic", "martial-arts", "mecha", "military", "music", "mystery", "parody", "police", "psychological", "romance", "samurai", "school", "sci-fi", "seinen", "shoujo", "shoujo-ai", "shounen", "shounen-ai", "slice-of-life", "space", "sports", "super-power", "supernatural", "thriller", "vampire", "yaoi", "yuri"]
   }
 }
 ```
@@ -665,7 +674,7 @@ GET /api/v2/characters/:id?page=:page
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/characters/one-piece-100?page=1');
+const resp = await fetch('/api/v2/characters/one-piece-12?page=1');
 const data = await resp.json();
 console.log(data);
 ```
@@ -680,17 +689,24 @@ console.log(data);
   "success": true,
   "data": {
     "pageInfo": {
-      "totalPages": 5,
+      "totalPages": 3,
       "currentPage": 1,
       "hasNextPage": true
     },
-    "characters": [
+    "response": [
       {
-        "name": "Monkey D. Luffy",
-        "image": "https://...",
-        "id": "character:monkey-d-luffy-1",
-        "role": "Main",
-        "voiceActors": [...]
+        "name": "Luffy Monkey",
+        "id": "character:1480",
+        "imageUrl": "https://cdnanimo.xyz/character/1480.jpg",
+        "role": "MAIN",
+        "voiceActors": [
+          {
+            "name": "Mayumi Tanaka",
+            "id": "people:7111",
+            "imageUrl": "https://cdnanimo.xyz/staff/7111.jpg",
+            "cast": "Japanese"
+          }
+        ]
       }
     ]
   }
@@ -713,7 +729,7 @@ GET /api/v2/character/:id
 **Request Example (Character):**
 
 ```javascript
-const resp = await fetch('/api/v2/character/character:roronoa-zoro-7');
+const resp = await fetch('/api/v2/character/character:1480');
 const data = await resp.json();
 console.log(data);
 ```
@@ -721,7 +737,7 @@ console.log(data);
 **Request Example (Actor):**
 
 ```javascript
-const resp = await fetch('/api/v2/character/people:kana-hanazawa-1');
+const resp = await fetch('/api/v2/character/people:7111');
 const data = await resp.json();
 console.log(data);
 ```
@@ -735,12 +751,29 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "name": "Roronoa Zoro",
-    "image": "https://...",
-    "role": "Main",
-    "animeAppearances": [...],
-    "biography": "...",
-    "voiceActors": [...]
+    "name": "Luffy Monkey",
+    "type": "character",
+    "japanese": "モンキー・D・ルフィ",
+    "imageUrl": "https://cdnanimo.xyz/character/1480.jpg",
+    "bio": "...",
+    "animeAppearances": [
+      {
+        "title": "THE ONE PIECE",
+        "alternativeTitle": null,
+        "id": "the-one-piece-17836",
+        "poster": "https://cdnanimo.xyz/poster/17836.jpg",
+        "role": "MAIN",
+        "type": "ONA"
+      }
+    ],
+    "voiceActors": [
+      {
+        "name": "Mayumi Tanaka",
+        "imageUrl": "https://cdnanimo.xyz/staff/7111.jpg",
+        "id": "people:7111-mayumi-tanaka",
+        "language": "Japanese"
+      }
+    ]
   }
 }
 ```
@@ -761,7 +794,56 @@ GET /api/v2/episodes/:id
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/episodes/steins-gate-3');
+const resp = await fetch('/api/v2/episodes/one-piece-12');
+const data = await resp.json();
+console.log(data);
+```
+
+**Response Schema:**
+
+<details>
+<summary>Example</summary>
+
+```javascript
+{
+  "success": true,
+  "data": [
+    {
+      "title": "I'm Luffy! The Man Who's Gonna Be King of the Pirates!",
+      "alternativeTitle": "Ore wa Luffy! Kaizoku Ou ni Naru Otoko Da!",
+      "episodeNumber": 1,
+      "id": "1",
+      "isFiller": false,
+      "sub": true,
+      "dub": true
+    }
+  ]
+}
+```
+
+</details>
+
+---
+
+### 13. GET Episode Servers
+
+Retrieve the available streaming servers for an episode, each with its direct player `iframe` embed URL. Use the episode `id` from [Anime Episodes](#12-get-anime-episodes).
+
+**Endpoint:**
+
+```
+GET /api/v2/servers/:episodeId?type=:type
+```
+
+**Query Parameters:**
+
+- `type` - `sub` (default) or `dub`
+- `ani`, `mal` - optional IDs from the episodes endpoint, used for exact flixera/hd-2 embeds
+
+**Request Example:**
+
+```javascript
+const resp = await fetch('/api/v2/servers/1?type=sub');
 const data = await resp.json();
 console.log(data);
 ```
@@ -775,14 +857,13 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "totalEpisodes": 24,
-    "episodes": [
+    "episodeId": "1",
+    "type": "sub",
+    "servers": [
       {
-        "title": "Turning Point",
-        "alternativeTitle": "Hajimari to Owari no Prologue",
-        "episodeNumber": 1,
-        "id": "steinsgate-3?ep=213",
-        "isFiller": false
+        "serverName": "s-2",
+        "serverId": "1-s2",
+        "iframe": "https://cdn.4animo.xyz/embed/hd-1/1/sub?k=1&autoPlay=0&skipIntro=0&skipOutro=0"
       }
     ]
   }
@@ -792,6 +873,49 @@ console.log(data);
 </details>
 
 ---
+
+### 14. GET Top Search
+
+Retrieve the trending search terms shown on the landing page.
+
+**Endpoint:**
+
+```
+GET /api/v2/top-search
+```
+
+**Request Example:**
+
+```javascript
+const resp = await fetch('/api/v2/top-search');
+const data = await resp.json();
+console.log(data);
+```
+
+**Response Schema:**
+
+<details>
+<summary>Example</summary>
+
+```javascript
+{
+  "success": true,
+  "data": [
+    {
+      "title": "One Piece",
+      "link": "https://zangetsu.cc/search?keyword=One+Piece",
+      "id": null
+    },
+    {
+      "title": "Black Clover",
+      "link": "https://zangetsu.cc/search?keyword=Black+Clover",
+      "id": null
+    }
+  ]
+}
+```
+
+</details>
 
 ---
 
@@ -811,7 +935,7 @@ GET /api/v2/schedules
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/schedules?date=2024-01-01');
+const resp = await fetch('/api/v2/schedules?date=2026-10-06');
 const data = await resp.json();
 console.log(data);
 ```
@@ -825,16 +949,15 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "2024-01-01": [
+    "2026-10-06": [
       {
-        "id": "anime-id",
-        "time": "10:30",
-        "title": "Anime Title",
-        "jname": "Japanese Title",
-        "episode": 12
+        "title": "Wushen Zhuzai: Da Wei Pian",
+        "alternativeTitle": "Wushen Zhuzai: Da Wei Pian",
+        "id": "wushen-zhuzai-da-wei-pian-16593",
+        "time": "02:00 AM",
+        "episode": 422
       }
-    ],
-    "2024-01-02": [ ... ]
+    ]
   }
 }
 ```
@@ -869,14 +992,17 @@ console.log(data);
 {
   "success": true,
   "data": [
-    {
-      "name": "Action",
-      "slug": "action"
-    },
-    {
-      "name": "Adventure",
-      "slug": "adventure"
-    }
+    "action",
+    "adventure",
+    "cars",
+    "comedy",
+    "dementia",
+    "demons",
+    "drama",
+    "ecchi",
+    "fantasy",
+    "game",
+    "..."
   ]
 }
 ```
@@ -1027,7 +1153,7 @@ Retrieve anime filtered by specific genre.
 GET /api/v2/animes/genre/:genre?page=:page
 ```
 
-**Available Genres:** action, adventure, cars, comedy, dementia, demons, drama, ecchi, fantasy, game, harem, historical, horror, isekai, josei, kids, magic, martial arts, mecha, military, music, mystery, parody, police, psychological, romance, samurai, school, sci-fi, seinen, shoujo, shoujo ai, shounen, shounen ai, slice of life, space, sports, super power, supernatural, thriller, vampire
+**Available Genres:** action, adventure, cars, comedy, dementia, demons, drama, ecchi, fantasy, game, harem, historical, horror, isekai, josei, kids, magic, martial arts, mecha, military, music, mystery, parody, police, psychological, romance, samurai, school, sci-fi, seinen, shoujo, shoujo ai, shounen, shounen ai, slice of life, space, sports, super power, supernatural, thriller, vampire, yaoi, yuri
 
 **Request Example:**
 
@@ -1053,7 +1179,7 @@ GET /api/v2/animes/producer/:producer?page=:page
 **Request Example:**
 
 ```javascript
-const resp = await fetch('/api/v2/animes/producer/bones?page=1');
+const resp = await fetch('/api/v2/animes/producer/toei-animation?page=1');
 const data = await resp.json();
 console.log(data);
 ```
@@ -1072,16 +1198,16 @@ console.log(data);
       "currentPage": 1,
       "hasNextPage": true
     },
-    "animes": [
+    "response": [
       {
-        "title": "My Hero Academia",
-        "alternativeTitle": "Boku no Hero Academia",
-        "id": "my-hero-academia-67",
-        "poster": "https://cdn.noitatnemucod.net/thumbnail/300x400/100/...",
+        "title": "One Piece",
+        "alternativeTitle": "ONE PIECE",
+        "id": "one-piece-12",
+        "poster": "https://cdnanimo.xyz/poster/12.jpg",
         "episodes": {
-          "sub": 13,
-          "dub": 13,
-          "eps": 13
+          "sub": 1180,
+          "dub": 1155,
+          "eps": 1180
         },
         "type": "TV",
         "duration": "24m"
@@ -1295,13 +1421,15 @@ console.log(data);
   "data": {
     "news": [
       {
-        "id": "article-id",
-        "title": "Article Title",
-        "description": "...",
-        "thumbnail": "https://...",
-        "uploadedAt": "2 hours ago"
+        "id": "the-fledgling-demon-lord-starter-shop-anime-2nd-teaser-reveals-more-cast-january-242541",
+        "title": "The Fledgling Demon Lord's Starter Shop Anime's 2nd Teaser Reveals More Cast, January Debut",
+        "description": "Yōhei Azakami joins cast as hero Ash ― ...",
+        "thumbnail": "https://www.animenewsnetwork.com/thumbnails/...",
+        "uploadedAt": "...",
+        "url": "/news/2026-10-06/the-fledgling-demon-lord-starter-shop-anime-2nd-teaser-reveals-more-cast-january-242541"
       }
-    ]
+    ],
+    "total": 24
   }
 }
 ```
@@ -1338,7 +1466,7 @@ console.log(data);
 {
   "success": true,
   "data": {
-    "id": "anime-id-123"
+    "id": "mashle-sanma-taisou-shinkakusha-saishuu-shiken-hen-18308"
   }
 }
 ```

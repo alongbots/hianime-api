@@ -1,6 +1,3 @@
-import { load } from 'cheerio';
-import { Element } from 'domhandler';
-
 export interface Suggestion {
   title: string | null;
   alternativeTitle: string | null;
@@ -11,40 +8,34 @@ export interface Suggestion {
   duration: string | null;
 }
 
-export const extractSuggestions = (html: string): Suggestion[] => {
-  const $ = load(html);
+export interface SuggestionJson {
+  id?: string | number;
+  slug?: string;
+  title?: string;
+  alternativeTitle?: string;
+  titles?: { romaji?: string };
+  poster?: string;
+  images?: { poster?: string };
+  year?: string | number;
+  type?: string;
+  duration?: string;
+  jname_native?: string;
+}
 
-  const response: Suggestion[] = [];
-  const allEl = $('.nav-item');
-  const items = allEl.toArray().splice(0, allEl.length - 2);
-  $(items).each((i: number, el: Element) => {
-    const obj: Suggestion = {
-      title: null,
-      alternativeTitle: null,
-      poster: null,
-      id: null,
-      aired: null,
-      type: null,
-      duration: null,
-    };
-    obj.id = $(el).attr('href')?.split('/').pop()?.split('?').at(0) || null;
-    obj.poster = $(el).find('.film-poster-img').attr('data-src') || null;
-    const titleEL = $(el).find('.film-name');
-    obj.title = titleEL.text() || null;
-    obj.alternativeTitle = titleEL.attr('data-jname') || null;
-    const infoEl = $(el).find('.film-infor');
-    obj.aired = infoEl.find('span').first().text() || null;
-    obj.type = infoEl
-      .contents()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((i: number, el: any) => {
-        return el.type === 'text' && $(el).text().trim() !== '';
-      })
-      .text()
-      .trim();
-    obj.duration = infoEl.find('span').last().text() || null;
+export interface SuggestionAjaxResponse {
+  success?: boolean;
+  response?: SuggestionJson[];
+}
 
-    response.push(obj);
-  });
-  return response;
+export const extractSuggestions = (json: SuggestionAjaxResponse): Suggestion[] => {
+  const items = Array.isArray(json.response) ? json.response : [];
+  return items.map(anime => ({
+    title: anime.title || null,
+    alternativeTitle: anime.alternativeTitle || anime.titles?.romaji || anime.jname_native || null,
+    poster: anime.images?.poster || anime.poster || null,
+    id: anime.slug || (anime.id !== undefined ? String(anime.id) : null),
+    aired: anime.year !== undefined ? String(anime.year) : null,
+    type: anime.type || null,
+    duration: anime.duration || null,
+  }));
 };

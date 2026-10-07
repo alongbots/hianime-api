@@ -40,6 +40,8 @@ const allGenres: string[] = [
   'supernatural',
   'thriller',
   'vampire',
+  'yaoi',
+  'yuri',
 ];
 const allGenresController = (): string[] => {
   return allGenres;

@@ -1,106 +1,85 @@
 import { Context } from 'hono';
-import filterOptions from '../utils/filter';
+import filterOptions, { genreNames } from '../utils/filter';
 import { axiosInstance } from '../services/axiosInstance';
 import { validationError } from '../utils/errors';
-import { extractListPage, ListPageResponse } from '../extractor/extractListpage';
+import {
+  extractFilterResults,
+  extractListPage,
+  FilterAjaxResponse,
+  ListPageResponse,
+} from '../extractor/extractListpage';
 
 const filterController = async (c: Context): Promise<ListPageResponse> => {
   const {
-    // will receive string and send as a string
     keyword = null,
     sort = null,
-
-    // will recieve an array as string will "," saparated and send as "," saparated string
     genres = null,
-
-    // will recieve as string and send as index of that string "see filterOptions"
     type = null,
     status = null,
     rated = null,
     score = null,
     season = null,
     language = null,
+    start_date = null,
+    end_date = null,
     page = '1',
   } = c.req.query();
 
-  const pageNum = Number(page);
-  const queryArr = [
-    { title: 'keyword', val: keyword },
-    { title: 'sort', val: sort },
-    { title: 'type', val: type },
-    { title: 'status', val: status },
-    { title: 'rated', val: rated },
-    { title: 'score', val: score },
-    { title: 'season', val: season },
-    { title: 'language', val: language },
-    { title: 'genres', val: genres },
-  ];
+  if (keyword) {
+    const noSpaceKeyword = keyword.trim().replace(/\s+/g, '+');
+    const pageNum = Number(page) || 1;
+    const url =
+      pageNum > 1
+        ? `/search?keyword=${encodeURIComponent(noSpaceKeyword)}&page=${pageNum}`
+        : `/search?keyword=${encodeURIComponent(noSpaceKeyword)}`;
+    const result = await axiosInstance(url);
+    if (!result.success || !result.data)
+      throw new validationError(result.message || 'something went wrong will queries');
+    return extractListPage(result.data);
+  }
 
   const params = new URLSearchParams();
 
-  queryArr.forEach(v => {
-    if (v.val) {
-      switch (v.title) {
-        case 'keyword':
-          params.set('keyword', formatKeyword(v.val));
-          break;
-        case 'genres':
-          params.set('genres', formatGenres(v.val));
-          break;
-        case 'sort': {
-          const formattedSort = formatSort(v.val);
-          if (formattedSort) params.set('sort', formattedSort);
-          break;
-        }
-        default: {
-          const formattedOption = formatOption(v.title, v.val);
-          if (formattedOption) params.set(v.title, formattedOption);
-        }
-      }
-    }
-  });
+  if (sort && filterOptions.sort.includes(sort)) params.set('sort', sort);
+  if (type && filterOptions.type.includes(type) && type !== 'all') params.set('type', type);
+  if (status && filterOptions.status.includes(status) && status !== 'all')
+    params.set('status', status);
+  if (rated && filterOptions.rated.includes(rated) && rated !== 'all') params.set('rated', rated);
+  if (score && filterOptions.score.includes(score) && score !== 'all') params.set('score', score);
+  if (season && filterOptions.season.includes(season) && season !== 'all')
+    params.set('season', season);
+  if (language && filterOptions.language.includes(language) && language !== 'all')
+    params.set('language', language);
 
-  if (pageNum > 1) params.set('page', String(pageNum));
+  if (genres) {
+    const names = genres
+      .split(',')
+      .map(g => genreNames[g.trim().toLowerCase().replaceAll(' ', '-').replaceAll('_', '-')])
+      .filter((n): n is string => typeof n === 'string');
+    if (names.length > 0) params.set('genres', names.join(','));
+  }
 
-  const endpoint = keyword ? '/search' : '/filter';
-  const queryString = params.toString();
-  const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+  const setDate = (value: string, prefix: 's' | 'e') => {
+    const [y, m, d] = value.split('-').map(Number);
+    if (!y || !m || !d) return;
+    params.set(`${prefix}y`, String(y));
+    params.set(`${prefix}m`, String(m));
+    params.set(`${prefix}d`, String(d));
+  };
+  if (start_date) setDate(start_date, 's');
+  if (end_date) setDate(end_date, 'e');
 
-  const result = await axiosInstance(url);
+  const pageNum = Number(page) || 1;
+  params.set('page', String(pageNum));
+
+  const result = await axiosInstance(`/ajax/filter?${params.toString()}`);
 
   console.log(result.message);
 
   if (!result.success || !result.data)
     throw new validationError(result.message || 'something went wrong will queries');
-  const response = extractListPage(result.data);
-  return response;
+
+  return extractFilterResults(JSON.parse(result.data) as FilterAjaxResponse);
 };
 
-const formatKeyword = (v: string) => v.toLowerCase();
-
-const formatSort = (v: string) => {
-  const index = filterOptions.sort.indexOf(v.toLowerCase().replace(' ', '_'));
-  if (index === -1) return null;
-  return filterOptions.sort[index];
-};
-
-const formatGenres = (v: string) => {
-  let indexes = v
-    .split(',')
-    .map(genre =>
-      (filterOptions as Record<string, string[]>).genres.indexOf(
-        genre.toLowerCase().replaceAll(' ', '_')
-      )
-    )
-    .filter(i => i !== -1)
-    .map(i => i + 1);
-
-  return indexes.length > 0 ? indexes.join(',') : '';
-};
-
-const formatOption = (k: string, v: string) => {
-  const index = (filterOptions as Record<string, string[]>)[k].indexOf(v);
-  if (index === -1) return null;
-  return index.toString();
-};
 export default filterController;
